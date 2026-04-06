@@ -16,8 +16,10 @@ __pycache__/
 data/raw/*
 data/processed/*
 
-# But allow .dvc pointer files inside those folders
+# Allow DVC pointer files and DVC-created .gitignore
+!data/raw/.gitignore
 !data/raw/*.dvc
+!data/processed/.gitignore
 !data/processed/*.dvc
 
 # ── Model files — tracked by DVC, not Git ────────────────
