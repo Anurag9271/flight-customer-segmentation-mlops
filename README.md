@@ -1,4 +1,5 @@
-# ✈️ Airline Customer Segmentation — Unsupervised ML Project V1
+
+# ✈️ Airline Customer Segmentation — Unsupervised ML Project
 
 ## Overview
 
