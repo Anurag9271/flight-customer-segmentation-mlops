@@ -11,11 +11,14 @@ __pycache__/
 # They are temporary and should not be tracked
 .ipynb_checkpoints/
 
-# ── Data files — tracked by DVC, not Git ─────────────────
-# These are large files that go to DVC remote storage
-# Git should never see them
-data/raw/
-data/processed/
+# Data files — tracked by DVC not Git
+# Ignore the actual data files but NOT the .dvc pointer files
+data/raw/*
+data/processed/*
+
+# But allow .dvc pointer files inside those folders
+!data/raw/*.dvc
+!data/processed/*.dvc
 
 # ── Model files — tracked by DVC, not Git ────────────────
 # .pkl files are binary — Git cannot diff them efficiently
