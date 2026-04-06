@@ -24,8 +24,14 @@ data/processed/*
 
 # ── Model files — tracked by DVC, not Git ────────────────
 # .pkl files are binary — Git cannot diff them efficiently
-outputs/models/
-outputs/clusters/
+outputs/models/*
+outputs/clusters/*
+
+# Allow DVC pointer files and DVC-created .gitignore
+!outputs/models/.gitignore
+!outputs/models/*.dvc
+!outputs/clusters/.gitignore
+!outputs/clusters/*.dvc
 
 # ── Environment files ─────────────────────────────────────
 # These contain secret API keys and passwords
