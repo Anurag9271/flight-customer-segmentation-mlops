@@ -1,0 +1,5 @@
+outs:
+- md5: 3b856aa3f1472c127a2258f6bfba2896
+  size: 1127
+  hash: md5
+  path: pca.pkl
