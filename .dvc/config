@@ -1,4 +1,6 @@
 [core]
-    remote = myremote
+    remote = myremo
 ['remote "myremote"']
     url = /tmp/dvcstore
+['remote "myremo"']
+    url = C:\Users\anura\Desktop\dvc-storage
