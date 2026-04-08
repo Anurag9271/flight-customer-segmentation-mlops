@@ -1,0 +1,23 @@
+artifact_path: file:C:/Users/anura/Desktop/fly/mlruns/1/models/m-83ff551e5f8143b7bc17be7f2a0733a0/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.14.0
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.2
+    skops_trusted_types: null
+mlflow_version: 3.10.1
+model_id: m-83ff551e5f8143b7bc17be7f2a0733a0
+model_size_bytes: 252549
+model_uuid: m-83ff551e5f8143b7bc17be7f2a0733a0
+prompts: null
+run_id: 9146d4e9942747e5875870ce5f08f844
+utc_time_created: '2026-04-07 16:13:07.647052'
