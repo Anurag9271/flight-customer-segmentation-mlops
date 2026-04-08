@@ -60,3 +60,6 @@ desktop.ini
 .vscode/
 .idea/
 *.swp
+
+# MLflow artifacts — large files, not needed in Git
+mlruns/
