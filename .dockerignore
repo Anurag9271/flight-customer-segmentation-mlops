@@ -1,0 +1,25 @@
+# Don't copy data files — mount them at runtime
+data/raw/
+data/processed/
+
+# Don't copy model outputs — generated inside container
+outputs/models/
+outputs/clusters/
+
+# Don't copy Git and DVC internals
+.git/
+.dvc/
+mlruns/
+
+# Don't copy virtual environments
+venv/
+.venv/
+
+# Don't copy Python cache
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Don't copy OS files
+.DS_Store
+Thumbs.db

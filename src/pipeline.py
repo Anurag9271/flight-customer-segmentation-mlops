@@ -45,7 +45,7 @@ def run_pipeline(input_path, output_path, n_clusters=4):
     print(f"\nClustering with K={n_clusters}...")
 
     km_model, km_labels       = run_kmeans(X_scaled.values, n_clusters=n_clusters)
-    agg_model, agg_labels     = run_hierarchical(X_scaled.values, n_clusters=n_clusters)
+    agg_model, agg_labels, agg_idx     = run_hierarchical(X_scaled.values, n_clusters=n_clusters)
     db_model, db_labels       = run_dbscan(X_scaled.values, eps=0.8, min_samples=10)
 
     # ── Step 7: Evaluate ──────────────────────────────────────────────────────
