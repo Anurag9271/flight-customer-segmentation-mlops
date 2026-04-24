@@ -1,0 +1,55 @@
+# Dockerfile.flask
+# ─────────────────────────────────────────────────────────
+# Builds Docker image for the Flask prediction API
+#
+# Build: docker build -f Dockerfile.flask -t flask-api .
+# Run  : docker run -p 5000:5000 
+#               -v %cd%/outputs:/app/outputs 
+#               flask-api
+# ─────────────────────────────────────────────────────────
+
+# ── Layer 1: Base image ───────────────────────────────────
+# python:3.10-slim = minimal Python 3.10 on Linux
+# slim keeps the image small — no unnecessary tools
+FROM python:3.10-slim
+
+# ── Layer 2: Set working directory ────────────────────────
+# All subsequent commands run inside /app
+WORKDIR /app
+
+# ── Layer 3: Copy requirements FIRST ──────────────────────
+# Copy requirements before code — Docker layer caching
+# If only code changes → pip install layer reused from cache
+# If requirements change → pip install runs again
+COPY requirements-docker.txt .
+
+# ── Layer 4: Install Python dependencies ──────────────────
+RUN pip install --no-cache-dir -r requirements-docker.txt
+
+# ── Layer 5: Copy application code ────────────────────────
+# Copies api.py and all src/ files into container
+COPY api.py .
+COPY src/ ./src/
+
+# ── Layer 6: Create model directory ───────────────────────
+# Model files will be mounted at runtime via volume
+# but directory must exist for the mount to work
+RUN mkdir -p outputs/models outputs/clusters
+
+# ── Layer 7: Expose port ───────────────────────────────────
+# EXPOSE documents which port the container listens on
+# Does NOT actually open the port — that happens with -p flag
+# Think of it as documentation for other developers
+EXPOSE 5000
+
+# ── Layer 8: Health check ──────────────────────────────────
+# Docker periodically calls this to check if container is healthy
+# If /health returns non-200 → container marked as unhealthy
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:5000/health')" \
+    || exit 1
+
+# ── Layer 9: Start the API ────────────────────────────────
+# CMD runs when container starts
+# python api.py starts Flask server
+CMD ["python", "api.py"]
