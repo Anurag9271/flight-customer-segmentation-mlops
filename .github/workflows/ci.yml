@@ -1,0 +1,139 @@
+# .github/workflows/ci.yml
+# ─────────────────────────────────────────────────────────
+# CI Pipeline for Flight Customer Segmentation API
+#
+# Triggers on every push to main branch
+# Steps:
+#   1. Checkout code
+#   2. Build Flask API Docker image
+#   3. Run container
+#   4. Test health endpoint
+#   5. Test prediction endpoint
+#   6. Test validation (error cases)
+# ─────────────────────────────────────────────────────────
+
+name: Flight Segmentation CI
+
+# ── Trigger ───────────────────────────────────────────────
+# Run this workflow on every push to main branch
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# ── Jobs ──────────────────────────────────────────────────
+jobs:
+
+  build-and-test:
+    name: Build Docker Image and Test API
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ── Step 1: Get the code ────────────────────────────
+      # Downloads your repository to the GitHub runner
+      # Without this step the runner has no code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # ── Step 2: Build Docker image ──────────────────────
+      # Builds the Flask API Docker image
+      # If this fails → Dockerfile has an error
+      # If pip install fails → requirements issue
+      - name: Build Flask API Docker image
+        run: docker build -f Dockerfile.flask -t flask-api .
+
+      # ── Step 3: Create dummy model files ───────────────
+      # Real model files are not in GitHub (tracked by DVC)
+      # We create dummy files just to test that the
+      # container starts and API responds
+      # In full CI you would download real models via DVC
+      - name: Create dummy model files for testing
+        run: |
+          mkdir -p outputs/models
+          python -c "
+          import joblib
+          import numpy as np
+          from sklearn.cluster import KMeans
+          from sklearn.preprocessing import StandardScaler
+
+          # Create minimal working models
+          X = np.random.rand(100, 5)
+          scaler = StandardScaler().fit(X)
+          model  = KMeans(n_clusters=4, random_state=42, n_init=10).fit(scaler.transform(X))
+
+          joblib.dump(scaler, 'outputs/models/scaler.pkl')
+          joblib.dump(model,  'outputs/models/kmeans_model.pkl')
+          print('Dummy models created')
+          "
+
+      # ── Step 4: Start the container ────────────────────
+      # -d = detached (background)
+      # -p = port mapping
+      # -v = mount model files into container
+      - name: Start Flask API container
+        run: |
+          docker run -d \
+            -p 5000:5000 \
+            -v ${{ github.workspace }}/outputs:/app/outputs \
+            --name flight-api \
+            flask-api
+
+      # ── Step 5: Wait for API to be ready ───────────────
+      # Container needs a few seconds to start Flask
+      # Without this delay tests run before API is ready
+      - name: Wait for API to start
+        run: sleep 5
+
+      # ── Step 6: Test health endpoint ───────────────────
+      # curl sends a GET request to /health
+      # -f flag makes curl exit with error if status != 200
+      # If this fails → API did not start correctly
+      - name: Test health endpoint
+        run: |
+          curl -f http://localhost:5000/health
+          echo "Health check passed"
+
+      # ── Step 7: Test prediction endpoint ───────────────
+      # Send a valid prediction request
+      # Verify we get a 200 response with segment data
+      - name: Test prediction endpoint
+        run: |
+          curl -f -X POST http://localhost:5000/predict \
+            -H "Content-Type: application/json" \
+            -d '{"L": 2500, "R": 15, "F": 180, "M": 420000, "C": 0.95}'
+          echo "Prediction endpoint passed"
+
+      # ── Step 8: Test validation ─────────────────────────
+      # Send request with missing field
+      # Expect 400 response — curl -f would fail on 400
+      # So we use different approach to verify 400 is returned
+      - name: Test input validation
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST http://localhost:5000/predict \
+            -H "Content-Type: application/json" \
+            -d '{"L": 2500, "R": 15}')
+
+          if [ "$STATUS" = "400" ]; then
+            echo "Validation test passed — got expected 400"
+          else
+            echo "Validation test FAILED — expected 400 got $STATUS"
+            exit 1
+          fi
+
+      # ── Step 9: Show container logs ────────────────────
+      # Always show logs — useful for debugging failures
+      # runs even if previous steps failed (if: always())
+      - name: Show container logs
+        if: always()
+        run: docker logs flight-api
+
+      # ── Step 10: Stop and remove container ─────────────
+      # Clean up after tests complete
+      - name: Stop container
+        if: always()
+        run: |
+          docker stop flight-api
+          docker rm flight-api
