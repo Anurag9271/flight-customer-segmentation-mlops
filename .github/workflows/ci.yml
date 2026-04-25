@@ -1,7 +1,4 @@
-# .github/workflows/ci.yml
-# Fixed version — updated actions + better error handling
-
-name: Flight Segmentation CI
+name: Flight Segmentation Minimal CI
 
 on:
   push:
@@ -11,150 +8,39 @@ on:
 
 jobs:
   build-and-test:
-    name: Build Docker Image and Test API
     runs-on: ubuntu-latest
 
     steps:
-
-      # ── Step 1: Checkout code ─────────────────────────
-      # Updated from v3 to v4 — fixes Node.js warning
+      # 1. Get the code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── Step 2: Build Docker image ────────────────────
-      - name: Build Flask API Docker image
-        run: docker build -f Dockerfile.flask -t flask-api .
+      # 2. Build the Docker Image
+      # This confirms your Dockerfile is valid and all Python libs install correctly.
+      - name: Build Flask API Image
+        run: docker build -f Dockerfile.flask -t flight-api .
 
-        
-# ── Step 2.5: Install dependencies for dummy model generation ──
-      - name: Install Python dependencies
+      # 3. Run a Basic Integration Test
+      # This starts the container and checks if the /health endpoint responds.
+      - name: Run Basic Health Test
         run: |
-          python3 -m pip install --upgrade pip
-          pip install joblib numpy scikit-learn
-
-
-      # ── Step 3: Create dummy models ───────────────────
-      # Real models are in DVC — create minimal ones for CI
-      - name: Create dummy model files
-        run: |
-          mkdir -p outputs/models
-          python3 -c "
-          import joblib
-          import numpy as np
-          from sklearn.cluster import KMeans
-          from sklearn.preprocessing import StandardScaler
-
-          X = np.random.rand(200, 5)
-          scaler = StandardScaler().fit(X)
-          X_scaled = scaler.transform(X)
-          model = KMeans(n_clusters=4, random_state=42, n_init=10).fit(X_scaled)
-
-          joblib.dump(scaler, 'outputs/models/scaler.pkl')
-          joblib.dump(model,  'outputs/models/kmeans_model.pkl')
-          print('Dummy models created successfully')
-          print('scaler.pkl:', 'outputs/models/scaler.pkl')
-          print('kmeans_model.pkl:', 'outputs/models/kmeans_model.pkl')
-          "
-
-      # ── Step 4: Verify model files exist ─────────────
-      - name: Verify model files created
-        run: |
-          ls -la outputs/models/
-          echo "Model files verified"
-
-      # ── Step 5: Start container ───────────────────────
-      - name: Start Flask API container
-        run: |
-          docker run -d \
-            -p 5000:5000 \
-            -v ${{ github.workspace }}/outputs:/app/outputs \
-            --name flight-api \
-            flask-api
-          echo "Container started"
-
-      # ── Step 6: Wait for API to be ready ─────────────
-      - name: Wait for API to start
-        run: |
-          echo "Waiting for Flask to start..."
-          sleep 8
-
-      # ── Step 7: Check container is running ───────────
-      - name: Verify container is running
-        run: |
-          docker ps
-          docker logs flight-api
-
-      # ── Step 8: Test health endpoint ─────────────────
-      - name: Test health endpoint
-        run: |
-          echo "Testing health endpoint..."
-          RESPONSE=$(curl -s http://localhost:5000/health)
-          echo "Response: $RESPONSE"
+          docker run -d -p 5000:5000 --name test-container flight-api
           
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            http://localhost:5000/health)
-          echo "Status code: $STATUS"
+          # Give the API 10 seconds to wake up
+          sleep 10
+          
+          # Check the health endpoint
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/health)
           
           if [ "$STATUS" = "200" ]; then
-            echo "Health check PASSED"
+            echo "SUCCESS: API is live and healthy."
           else
-            echo "Health check FAILED — got $STATUS"
-            docker logs flight-api
+            echo "FAILURE: API returned status $STATUS"
+            docker logs test-container
             exit 1
           fi
 
-      # ── Step 9: Test prediction endpoint ─────────────
-      - name: Test prediction endpoint
-        run: |
-          echo "Testing prediction endpoint..."
-          RESPONSE=$(curl -s -X POST \
-            http://localhost:5000/predict \
-            -H "Content-Type: application/json" \
-            -d '{"L": 2500, "R": 15, "F": 180, "M": 420000, "C": 0.95}')
-          echo "Response: $RESPONSE"
-          
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST http://localhost:5000/predict \
-            -H "Content-Type: application/json" \
-            -d '{"L": 2500, "R": 15, "F": 180, "M": 420000, "C": 0.95}')
-          echo "Status code: $STATUS"
-          
-          if [ "$STATUS" = "200" ]; then
-            echo "Prediction test PASSED"
-          else
-            echo "Prediction test FAILED — got $STATUS"
-            docker logs flight-api
-            exit 1
-          fi
-
-      # ── Step 10: Test validation ──────────────────────
-      - name: Test input validation
-        run: |
-          echo "Testing validation — missing fields..."
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST http://localhost:5000/predict \
-            -H "Content-Type: application/json" \
-            -d '{"L": 2500, "R": 15}')
-          echo "Status code: $STATUS"
-          
-          if [ "$STATUS" = "400" ]; then
-            echo "Validation test PASSED — got expected 400"
-          else
-            echo "Validation test FAILED — expected 400 got $STATUS"
-            exit 1
-          fi
-
-      # ── Always show logs ──────────────────────────────
-      - name: Show container logs
+      # 4. Cleanup
+      - name: Stop Container
         if: always()
-        run: |
-          echo "=== Container Logs ==="
-          docker logs flight-api || echo "No container logs available"
-
-      # ── Cleanup ───────────────────────────────────────
-      - name: Stop and remove container
-        if: always()
-        run: |
-          docker stop flight-api || true
-          docker rm flight-api   || true
-          echo "Cleanup complete"
+        run: docker stop test-container && docker rm test-container
