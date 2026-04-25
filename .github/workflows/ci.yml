@@ -25,6 +25,14 @@ jobs:
       - name: Build Flask API Docker image
         run: docker build -f Dockerfile.flask -t flask-api .
 
+        
+# ── Step 2.5: Install dependencies for dummy model generation ──
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install joblib numpy scikit-learn
+
+
       # ── Step 3: Create dummy models ───────────────────
       # Real models are in DVC — create minimal ones for CI
       - name: Create dummy model files
