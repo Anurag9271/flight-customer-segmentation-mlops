@@ -1,4 +1,4 @@
-# fastapi.py
+# fastapi_app.py
 
 import os
 import joblib
@@ -111,4 +111,4 @@ def segments():
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run("fastapi:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("fastapi_app:app", host="0.0.0.0", port=port, reload=False)
