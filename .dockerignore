@@ -3,8 +3,8 @@ data/raw/
 data/processed/
 
 # Don't copy model outputs — generated inside container
-outputs/models/
-outputs/clusters/
+# outputs/models/
+# outputs/clusters/
 
 # Don't copy Git and DVC internals
 .git/
