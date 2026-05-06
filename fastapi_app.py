@@ -86,7 +86,7 @@ def predict(customer: CustomerInput):
 @app.get("/segments")
 def segments():
     return{
-        "total segments: 4,"
+        "total segments": 4,
         "framework":"LRFMC",
         "segments":[
             {
