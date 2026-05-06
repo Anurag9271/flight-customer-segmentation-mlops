@@ -16,8 +16,8 @@ RUN pip install --no-cache-dir -r requirements-docker.txt
 COPY fastapi_app.py .
 COPY src/ ./src/
 
-# Step 6: Create folder for model files
-RUN mkdir -p outputs/models
+# Step 6: Bake the model directly into the image for production
+COPY outputs/models/ ./outputs/models/
 
 # Step 7: Tell Docker this app uses port 8000
 EXPOSE 8000
