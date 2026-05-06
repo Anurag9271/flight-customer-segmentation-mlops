@@ -43,7 +43,7 @@ class CustomerInput(BaseModel):
     C: float = Field(..., ge=0.0, le=2.0,     description="Average discount coefficient")
 
 # ── Routes ────────────────────────────────────────────────
-@app.get("/health")
+@app.get("/")
 def health():
     return {
         "status": "ok",
