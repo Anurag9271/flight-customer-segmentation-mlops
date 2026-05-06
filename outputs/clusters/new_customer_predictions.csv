@@ -1,0 +1,6 @@
+CustomerID,L_days,R_days,F_flights,M_km,C_discount,Cluster,Segment
+C001,2200,20,95,280000,0.92,2,Champions
+C002,800,250,6,8500,0.68,1,Occasional Leisure Flyers
+C003,1500,60,22,45000,0.78,2,Champions
+C004,350,180,3,6000,0.61,1,Occasional Leisure Flyers
+C005,1900,400,12,30000,0.75,3,At-Risk Customers

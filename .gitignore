@@ -25,8 +25,8 @@ data/processed/*
 
 # ── Model files — tracked by DVC, NOT Git ─────────────────
 # .pkl files are binary — Git cannot handle them efficiently
-outputs/models/*
-outputs/clusters/*
+# outputs/models/*
+# outputs/clusters/*
 
 # Allow DVC pointer files and DVC auto-created .gitignore
 !outputs/models/.gitignore
