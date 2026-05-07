@@ -1,46 +1,90 @@
-name: Flight Segmentation Minimal CI
+name: CI — FastAPI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Get the code
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
-  
-      # 2. Build the Docker Image
-      # This confirms your Dockerfile is valid and all Python libs install correctly.
-      - name: Build Flask API Image
-        run: docker build -f Dockerfile.flask -t flight-api .
 
-      # 3. Run a Basic Integration Test
-      # This starts the container and checks if the /health endpoint responds.
-      - name: Run Basic Health Test
+      - name: Build Docker image
+        run: docker build -t flight-segmentation-fastapi -f Dockerfile.fastapi .
+
+      - name: Run FastAPI container
         run: |
-          docker run -d -p 5000:5000 --name test-container flight-api
-          
-          # Give the API 10 seconds to wake up
-          sleep 10
-          
-          # Check the health endpoint
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/health)
-          
-          if [ "$STATUS" = "200" ]; then
-            echo "SUCCESS: API is live and healthy."
-          else
-            echo "FAILURE: API returned status $STATUS"
-            docker logs test-container
-            exit 1
-          fi
+          docker run -d \
+            -p 8000:8000 \
+            --name fastapi-api \
+            flight-segmentation-fastapi
+          sleep 15
 
-      # 4. Cleanup
-      - name: Stop Container
+      - name: Install test dependencies
+        run: pip install requests
+
+      - name: Run API test
+        run: python test_fastapi.py
+
+      - name: Stop container
         if: always()
-        run: docker stop test-container && docker rm test-container
+        run: docker stop fastapi-api && docker rm fastapi-api
+
+
+
+
+
+
+# name: Flight Segmentation Minimal CI
+
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
+
+# jobs:
+#   build-and-test:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       # 1. Get the code
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+  
+#       # 2. Build the Docker Image
+#       # This confirms your Dockerfile is valid and all Python libs install correctly.
+#       - name: Build Flask API Image
+#         run: docker build -f Dockerfile.flask -t flight-api .
+
+#       # 3. Run a Basic Integration Test
+#       # This starts the container and checks if the /health endpoint responds.
+#       - name: Run Basic Health Test
+#         run: |
+#           docker run -d -p 5000:5000 --name test-container flight-api
+          
+#           # Give the API 10 seconds to wake up
+#           sleep 10
+          
+#           # Check the health endpoint
+#           STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5000/health)
+          
+#           if [ "$STATUS" = "200" ]; then
+#             echo "SUCCESS: API is live and healthy."
+#           else
+#             echo "FAILURE: API returned status $STATUS"
+#             docker logs test-container
+#             exit 1
+#           fi
+
+#       # 4. Cleanup
+#       - name: Stop Container
+#         if: always()
+#         run: docker stop test-container && docker rm test-container
+
+
