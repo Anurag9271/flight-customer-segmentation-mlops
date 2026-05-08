@@ -42,6 +42,7 @@ def compare_all_algorithms(X, labels_dict):
 
     rows = []
     for name, labels in labels_dict.items():
+        X_subset = X[:len(labels)]      #<--------------------- Updated for actions
         mask = labels != -1
         n_clusters = len(set(labels[mask]))
         n_noise = int((labels == -1).sum())
@@ -62,7 +63,7 @@ def compare_all_algorithms(X, labels_dict):
             })
             continue
 
-        sil = silhouette_score(X[mask], labels[mask],
+        sil = silhouette_score(X_subset[mask], labels[mask],     #<-------------Updated for github actions
                                sample_size=10000, random_state=42)
         db  = davies_bouldin_score(X[mask], labels[mask])
 
