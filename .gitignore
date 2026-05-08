@@ -12,8 +12,8 @@ __pycache__/
 
 # ── Data files — tracked by DVC, NOT Git ──────────────────
 # Ignore actual data files (large binary files)
-data/raw/*
-data/processed/*
+# data/raw/*
+# data/processed/*
 
 # Allow DVC pointer files and DVC auto-created .gitignore
 # These small files MUST go to Git
