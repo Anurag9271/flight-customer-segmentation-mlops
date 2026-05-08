@@ -67,7 +67,9 @@ def run_pipeline(input_path, output_path, n_clusters=4):
     # ── Step 9: Save final output ─────────────────────────────────────────────
     print("\nSaving results...")
     df_lrfmc['KMeans_Cluster']      = km_labels
-    df_lrfmc['Hierarchical_Cluster'] = agg_labels
+    # df_lrfmc['Hierarchical_Cluster'] = agg_labels
+    df_lrfmc['Hierarchical_Cluster'] = -1
+    df_lrfmc.iloc[:len(agg_labels), df_lrfmc.columns.get_loc('Hierarchical_Cluster')] = agg_labels    
     df_lrfmc['DBSCAN_Cluster']      = db_labels
     df_lrfmc.to_csv(output_path, index=False)
     print(f"  Saved to {output_path}")
