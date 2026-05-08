@@ -1,0 +1,59 @@
+# .github/workflows/retrain.yml
+# Triggers when data files or train script change
+# Retrains model → commits new pkl files → triggers deploy
+
+name: Retrain Model on Data Update
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "data/**"
+      - "src/pipeline.py"
+  workflow_dispatch:   # Manual trigger
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install pandas numpy scipy joblib
+          pip install scikit-learn==1.7.2
+
+      - name: Retrain model
+        run: |
+          echo "Starting retraining..."
+          python main.py
+          echo "Retraining complete"
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit new models
+        run: |
+          git add outputs/models/*.pkl
+          git diff --staged --quiet || \
+            git commit -m "Auto-retrain: update models [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger deployment
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+          echo "Deployment triggered with new models"

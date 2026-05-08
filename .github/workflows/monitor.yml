@@ -1,0 +1,37 @@
+# .github/workflows/monitor.yml
+# Runs every Monday at 9 AM UTC automatically
+# Also can be triggered manually from GitHub Actions tab
+
+name: Model Monitoring
+
+on:
+  schedule:
+    - cron: '0 9 * * 0'   # Every Monday 9 AM UTC
+  workflow_dispatch:       # Manual trigger button on GitHub
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install pandas numpy scipy joblib scikit-learn==1.7.2
+
+      - name: Run custom monitoring
+        run: python monitoring/monitor_custom.py
+
+      - name: Upload monitoring results
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitoring-results
+          path: reports/monitoring/
+          if-no-files-found: ignore

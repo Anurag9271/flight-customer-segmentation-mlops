@@ -1,0 +1,71 @@
+# .github/workflows/deploy.yml
+# Triggers ONLY when deployment-relevant files change
+# Tests first → then deploys to Render
+
+name: Deploy to Render
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "fastapi_app.py"
+      - "Dockerfile.fastapi"
+      - "requirements-docker.txt"
+      - "outputs/models/**"
+      - ".github/workflows/deploy.yml"
+
+jobs:
+
+  # ── Job 1: Test first ──────────────────────────────────
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install fastapi uvicorn joblib
+          pip install scikit-learn==1.7.2 pandas numpy
+
+      - name: Test models load
+        run: |
+          python -c "
+          import joblib
+          scaler   = joblib.load('outputs/models/scaler.pkl')
+          km_model = joblib.load('outputs/models/kmeans_model.pkl')
+          print('Models loaded OK')
+          print('Model type:', type(km_model).__name__)
+          print('Clusters:', km_model.n_clusters)
+          "
+
+      - name: Test FastAPI imports
+        run: |
+          python -c "
+          from fastapi_app import app
+          print('FastAPI app imports OK')
+          print('Routes:', [r.path for r in app.routes])
+          "
+
+  # ── Job 2: Deploy (only after test passes) ─────────────
+  deploy:
+    needs: test          # waits for test job to pass
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Trigger Render Deploy
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+
+      - name: Deployment triggered
+        run: |
+          echo "Deployment triggered on Render"
+          echo "Check: https://dashboard.render.com/"
+          echo "Live URL: https://flight-segmentation-api.onrender.com"
