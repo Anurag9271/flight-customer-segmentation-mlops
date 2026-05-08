@@ -65,7 +65,7 @@ def compare_all_algorithms(X, labels_dict):
 
         sil = silhouette_score(X_subset[mask], labels[mask],     #<-------------Updated for github actions
                                sample_size=10000, random_state=42)
-        db  = davies_bouldin_score(X[mask], labels[mask])
+        db  = davies_bouldin_score(X_subset[mask], labels[mask])   #<-------------Updated for github actions
 
         print(f"\n  {name}")
         print(f"    Clusters found   : {n_clusters}")
